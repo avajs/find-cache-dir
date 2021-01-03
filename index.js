@@ -5,6 +5,7 @@ const commonDir = require('commondir');
 const pkgDir = require('pkg-dir');
 const makeDir = require('make-dir');
 
+const MODULES_DIRECTORIES_NAMES = ['node_modules', '.yarn'];
 const {env, cwd} = process;
 
 const isWritable = path => {
@@ -28,17 +29,17 @@ function useDirectory(directory, options) {
 	return directory;
 }
 
-function getNodeModuleDirectory(directory) {
-	const nodeModules = path.join(directory, 'node_modules');
+function getModulesDirectory(directory, modulesDirectoryPath) {
+	const modulesDirectory = path.join(directory, modulesDirectoryPath);
 
 	if (
-		!isWritable(nodeModules) &&
-		(fs.existsSync(nodeModules) || !isWritable(path.join(directory)))
+		!isWritable(modulesDirectory) &&
+		(fs.existsSync(modulesDirectory) || !isWritable(path.join(directory)))
 	) {
 		return;
 	}
 
-	return nodeModules;
+	return modulesDirectory;
 }
 
 module.exports = (options = {}) => {
@@ -58,10 +59,11 @@ module.exports = (options = {}) => {
 		return;
 	}
 
-	const nodeModules = getNodeModuleDirectory(directory);
-	if (!nodeModules) {
-		return undefined;
-	}
+	for (const modulesDirectoryName of MODULES_DIRECTORIES_NAMES) {
+		const modulesDirectory = getModulesDirectory(directory, modulesDirectoryName);
 
-	return useDirectory(path.join(directory, 'node_modules', '.cache', options.name), options);
+		if (modulesDirectory) {
+			return useDirectory(path.join(modulesDirectory, '.cache', options.name), options);
+		}
+	}
 };
